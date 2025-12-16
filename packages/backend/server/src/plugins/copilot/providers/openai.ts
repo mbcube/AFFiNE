@@ -370,14 +370,21 @@ export class OpenAIProvider extends CopilotProvider<OpenAIConfig> {
     try {
       const baseUrl = this.config.baseURL || 'https://api.openai.com/v1';
       if (this.config.apiKey && baseUrl && !this.onlineModelList.length) {
-        const { data } = await fetch(`${baseUrl}/models`, {
+        const response = await fetch(`${baseUrl}/models`, {
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
             'Content-Type': 'application/json',
           },
-        })
-          .then(r => r.json())
-          .then(r => ModelListSchema.parse(r));
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch models: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const responseData = await response.json();
+        const { data } = ModelListSchema.parse(responseData);
         this.onlineModelList = data.map(model => model.id);
       }
     } catch (e) {
