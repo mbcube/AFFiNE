@@ -368,8 +368,19 @@ export class OpenAIProvider extends CopilotProvider<OpenAIConfig> {
 
   override async refreshOnlineModels() {
     try {
+      this.logger.debug('Starting refreshOnlineModels');
       const baseUrl = this.config.baseURL || 'https://api.openai.com/v1';
+      this.logger.debug('Config check:', {
+        hasApiKey: !!this.config.apiKey,
+        apiKeyPrefix: this.config.apiKey
+          ? this.config.apiKey.substring(0, 7) + '...'
+          : 'none',
+        baseUrl,
+        onlineModelListLength: this.onlineModelList.length,
+      });
+
       if (this.config.apiKey && baseUrl && !this.onlineModelList.length) {
+        this.logger.debug(`Fetching models from: ${baseUrl}/models`);
         const response = await fetch(`${baseUrl}/models`, {
           headers: {
             Authorization: `Bearer ${this.config.apiKey}`,
@@ -377,15 +388,27 @@ export class OpenAIProvider extends CopilotProvider<OpenAIConfig> {
           },
         });
 
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch models: ${response.status} ${response.statusText}`
-          );
-        }
+        this.logger.debug(
+          `Response status: ${response.status} ${response.statusText}`
+        );
+
+        // if (!response.ok) {
+        //   throw new Error(
+        //     `Failed to fetch models: ${response.status} ${response.statusText}`
+        //   );
+        // }
 
         const responseData = await response.json();
+        this.logger.debug(
+          'Received response data, parsing with ModelListSchema'
+        );
         const { data } = ModelListSchema.parse(responseData);
         this.onlineModelList = data.map(model => model.id);
+        this.logger.debug(
+          `Successfully loaded ${this.onlineModelList.length} models`
+        );
+      } else {
+        this.logger.debug('Skipping model fetch - condition not met');
       }
     } catch (e) {
       this.logger.error('Failed to fetch available models', e);
