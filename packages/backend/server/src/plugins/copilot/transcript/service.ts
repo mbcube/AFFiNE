@@ -256,12 +256,11 @@ export class CopilotTranscriptionService {
     offset: number,
     modelId?: string
   ) {
-    // NOTE: Vertex provider not support transcription yet, we always use Gemini here
     const result = await this.chatWithPrompt(
       'Transcript audio',
       { attachments: [url], params: { mimetype: mimeType } },
       TranscriptionResponseSchema,
-      CopilotProviderType.Gemini,
+      CopilotProviderType.OpenAI,
       modelId
     );
 
